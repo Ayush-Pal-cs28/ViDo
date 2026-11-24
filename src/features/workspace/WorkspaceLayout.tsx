@@ -187,6 +187,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
   const [selectedTask, setSelectedTask] = useState<SampleTask | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<SampleTask | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const todayStr = getTodayDateString();
@@ -234,6 +235,36 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
   const handleCreateTask = (newTask: SampleTask) => {
     setTasks((prev) => [newTask, ...prev]);
     setToastMessage(`Task "${newTask.title}" added to your workspace.`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleEditTask = (taskToEdit: SampleTask) => {
+    // Hand the task to the shared create modal in explicit edit mode.
+    setIsDetailOpen(false);
+    setEditingTask(taskToEdit);
+  };
+
+  const handleUpdateTask = (updatedTask: SampleTask) => {
+    const applyEditableFields = (task: SampleTask): SampleTask => ({
+      ...task,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      priority: updatedTask.priority,
+      dueDate: updatedTask.dueDate,
+      dueTime: updatedTask.dueTime,
+    });
+
+    setTasks((prev) =>
+      prev.map((task) => (task.id === updatedTask.id ? applyEditableFields(task) : task))
+    );
+
+    // Keep the detail modal's task snapshot in sync after saving.
+    setSelectedTask((prev) =>
+      prev && prev.id === updatedTask.id ? applyEditableFields(prev) : prev
+    );
+
+    setEditingTask(null);
+    setToastMessage(`Task "${updatedTask.title}" updated.`);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
@@ -590,6 +621,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
           setSelectedTask(null);
         }}
         onToggleTask={handleToggleTask}
+        onEditTask={handleEditTask}
         isPreview={isPreview}
       />
 
@@ -597,6 +629,13 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreateTask={handleCreateTask}
+      />
+
+      <TaskCreateModal
+        isOpen={editingTask !== null}
+        task={editingTask}
+        onClose={() => setEditingTask(null)}
+        onUpdateTask={handleUpdateTask}
       />
 
       <CreateTeamModal

@@ -188,6 +188,99 @@ describe('dateUtils', () => {
         expect(res.dateError).toMatch(/required/i);
       });
     });
+
+    describe('Edit mode (allowPastDeadline)', () => {
+      it('allows a genuinely overdue deadline whose start date precedes it', () => {
+        const res = validateChronologicalDeadline({
+          startDate: '2019-12-01',
+          dueDate: '2020-01-01',
+          dueTime: '09:00',
+          now: mockNow,
+          allowPastDeadline: true,
+        });
+        expect(res.isValid).toBe(true);
+        expect(res.effectiveDueDate).toBe('2020-01-01');
+        expect(res.effectiveDueTime).toBe('09:00');
+      });
+
+      it('still rejects a due date before the start date', () => {
+        const res = validateChronologicalDeadline({
+          startDate: '2026-11-20',
+          dueDate: '2026-11-19',
+          now: mockNow,
+          allowPastDeadline: true,
+        });
+        expect(res.isValid).toBe(false);
+        expect(res.dateError).toMatch(/deadline date must be on or after start date/i);
+      });
+
+      it('still rejects a same-day due time before an explicit start time', () => {
+        const res = validateChronologicalDeadline({
+          startDate: '2026-11-10',
+          startTime: '15:00',
+          dueDate: '2026-11-10',
+          dueTime: '14:00',
+          now: mockNow,
+          allowPastDeadline: true,
+        });
+        expect(res.isValid).toBe(false);
+        expect(res.timeError).toMatch(/deadline must be later than the start time/i);
+      });
+    });
+
+    describe('Malformed date and time values', () => {
+      it('rejects malformed or impossible due dates', () => {
+        for (const dueDate of ['not-a-date', '2026-1-01', '2026-13-01', '2026-02-30']) {
+          const res = validateChronologicalDeadline({ dueDate, now: mockNow });
+          expect(res.isValid).toBe(false);
+          expect(res.dateError).toMatch(/valid date/i);
+        }
+      });
+
+      it('rejects malformed due times', () => {
+        for (const dueTime of ['9:00', '24:00', '12:60', 'noon']) {
+          const res = validateChronologicalDeadline({
+            dueDate: '2026-11-20',
+            dueTime,
+            now: mockNow,
+          });
+          expect(res.isValid).toBe(false);
+          expect(res.timeError).toMatch(/valid time/i);
+        }
+      });
+
+      it('rejects malformed start dates and start times', () => {
+        const badDate = validateChronologicalDeadline({
+          startDate: '2026-02-30',
+          dueDate: '2026-11-20',
+          now: mockNow,
+        });
+        expect(badDate.isValid).toBe(false);
+        expect(badDate.startError).toMatch(/valid date/i);
+
+        const badTime = validateChronologicalDeadline({
+          startDate: '2026-11-20',
+          startTime: '25:00',
+          dueDate: '2026-11-20',
+          dueTime: '23:00',
+          now: mockNow,
+        });
+        expect(badTime.isValid).toBe(false);
+        expect(badTime.startError).toMatch(/valid time/i);
+      });
+
+      it('rejects malformed values even when past deadlines are allowed', () => {
+        const res = validateChronologicalDeadline({
+          startDate: '2019-12-01',
+          dueDate: '2020-01-01',
+          dueTime: '25:00',
+          now: mockNow,
+          allowPastDeadline: true,
+        });
+        expect(res.isValid).toBe(false);
+        expect(res.timeError).toMatch(/valid time/i);
+      });
+    });
   });
 
   describe('validateDeadline (legacy compatibility)', () => {

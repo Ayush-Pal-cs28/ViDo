@@ -9,6 +9,7 @@ export interface TaskDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onToggleTask?: (task: SampleTask) => void;
+  onEditTask?: (task: SampleTask) => void;
   isPreview?: boolean;
 }
 
@@ -17,6 +18,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   isOpen,
   onClose,
   onToggleTask,
+  onEditTask,
   isPreview = true,
 }) => {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -212,9 +214,16 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               {isCompleted ? 'Reopen Task' : 'Mark as Complete'}
             </Button>
           )}
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            {onEditTask && task && !task.isArchived && (
+              <Button variant="secondary" size="sm" onClick={() => onEditTask(task)}>
+                Edit Task
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     </div>
