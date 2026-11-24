@@ -464,6 +464,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                     tasks={tasks}
                     dashboard={dashboard}
                     initialTab="tasks"
+                    initialStatus="all"
                     onTaskClick={handleTaskClick}
                     onToggleTask={handleToggleTask}
                     onNewTaskClick={() => setIsCreateOpen(true)}
